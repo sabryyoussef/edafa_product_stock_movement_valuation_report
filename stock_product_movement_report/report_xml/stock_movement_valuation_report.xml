@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_stock_movement_valuation_pdf" model="ir.actions.report">
+        <field name="name">Product Movement Valuation Report</field>
+        <field name="model">stock.movement.valuation.report.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">stock_product_movement_report.rpt_stock_move_valuation_doc</field>
+        <field name="report_file">stock_product_movement_report.rpt_stock_move_valuation_doc</field>
+        <field name="binding_model_id" ref="model_stock_movement_valuation_report_wizard"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="rpt_stock_move_valuation_doc">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <style>
+                            .smvr-report { font-size: 9px; line-height: 1.25; }
+                            .smvr-title { margin: 0 0 2px 0; font-size: 17px; }
+                            .smvr-subtitle { margin: 0 0 2px 0; font-size: 11px; }
+                            .smvr-subtitle-2 { margin: 0 0 8px 0; font-size: 9px; color: #444; }
+                            .smvr-section-title { margin: 8px 0 3px 0; font-size: 11px; }
+                            .smvr-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+                            .smvr-table th, .smvr-table td {
+                                border: 1px solid #333;
+                                padding: 2px 3px;
+                                vertical-align: top;
+                                word-break: break-word;
+                            }
+                            .smvr-table th { background-color: #efefef; }
+                            .smvr-group-in { background-color: #e8f3ff; }
+                            .smvr-group-out { background-color: #fdecec; }
+                            .smvr-group-bal { background-color: #eef7ea; }
+                            .smvr-right { text-align: right; }
+                            .smvr-center { text-align: center; }
+                            .smvr-note { color: #444; }
+                            .smvr-mb8 { margin-bottom: 8px; }
+                            .smvr-empty {
+                                text-align: center;
+                                font-size: 11px;
+                                padding: 8px 2px;
+                            }
+                        </style>
+
+                        <div class="smvr-report">
+                            <h2 class="smvr-title">Product Movement Valuation Report</h2>
+                            <div class="smvr-subtitle">تقرير حركة وتقييم الصنف</div>
+                            <div class="smvr-subtitle-2">Audit report based on posted stock moves and valuation layers.<br/>تقرير رقابي بناءً على حركات المخزون المؤكدة وطبقات التقييم المسجلة.</div>
+
+                            <h3 class="smvr-section-title">Header / البيانات الرئيسية</h3>
+                            <table class="smvr-table smvr-mb8">
+                                <tr>
+                                    <th>Company / الشركة</th>
+                                    <td><span t-esc="report_data.get('header', {}).get('company_name', '') or '-'"/></td>
+                                    <th>Product / الصنف</th>
+                                    <td><span t-esc="report_data.get('header', {}).get('product_name', '')"/></td>
+                                    <th>Internal Reference / الكود الداخلي</th>
+                                    <td><span t-esc="report_data.get('header', {}).get('product_code', '')"/></td>
+                                </tr>
+                                <tr>
+                                    <th>UoM / وحدة القياس</th>
+                                    <td><span t-esc="report_data.get('header', {}).get('uom', '')"/></td>
+                                    <th>Cost Method / طريقة التكلفة</th>
+                                    <td><span t-esc="report_data.get('header', {}).get('cost_method', '')"/></td>
+                                    <th>Date From / من تاريخ</th>
+                                    <td><span t-esc="report_data.get('header', {}).get('date_from', '')"/></td>
+                                    <th>Date To / إلى تاريخ</th>
+                                    <td><span t-esc="report_data.get('header', {}).get('date_to', '')"/></td>
+                                </tr>
+                                <tr>
+                                    <th>Warehouse / المخزن</th>
+                                    <td><span t-esc="report_data.get('header', {}).get('warehouse', '')"/></td>
+                                    <th>Location / الموقع</th>
+                                    <td><span t-esc="report_data.get('header', {}).get('location', '')"/></td>
+                                    <th>Scope Note / ملاحظة النطاق</th>
+                                    <td colspan="3">Running balances are calculated within the selected date/location scope.<br/>الأرصدة المتحركة محسوبة داخل نطاق التاريخ والموقع المختار فقط.</td>
+                                </tr>
+                            </table>
+
+                            <h3 class="smvr-section-title">Current Stock by Location / الرصيد الحالي حسب الموقع</h3>
+                            <table class="smvr-table smvr-mb8">
+                                <thead>
+                                    <tr>
+                                        <th>Location / الموقع</th>
+                                        <th class="smvr-right">Quantity / الكمية</th>
+                                        <th class="smvr-right">Value / القيمة</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr t-foreach="report_data.get('current_stock', [])" t-as="stock_line">
+                                        <td><span t-esc="stock_line.get('location', '')"/></td>
+                                        <td class="smvr-right"><span t-esc="'%.2f' % stock_line.get('qty', 0.0) if stock_line.get('qty', '') not in ('', False, None) else '-'"/></td>
+                                        <td class="smvr-right"><span t-esc="'%.2f' % stock_line.get('value') if stock_line.get('value', '') not in ('', False, None) else '-'"/></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div class="smvr-note smvr-mb8">Current stock value by location is not calculated in this version.<br/>قيمة الرصيد الحالي حسب الموقع غير محسوبة في هذا الإصدار.</div>
+
+                            <h3 class="smvr-section-title">Movements / الحركات</h3>
+                            <table class="smvr-table smvr-mb8">
+                                <thead>
+                                    <tr>
+                                        <th rowspan="2">Move Date<br/>تاريخ الحركة</th>
+                                        <th rowspan="2">Valuation Date<br/>تاريخ التقييم</th>
+                                        <th rowspan="2">Document<br/>السند</th>
+                                        <th rowspan="2">Origin<br/>المرجع</th>
+                                        <th rowspan="2">Lot<br/>Lot</th>
+                                        <th rowspan="2">Expiry<br/>الصلاحية</th>
+                                        <th rowspan="2">From<br/>من</th>
+                                        <th rowspan="2">To<br/>إلى</th>
+                                        <th rowspan="2">Type<br/>النوع</th>
+                                        <th colspan="3" class="smvr-group-in smvr-center">Incoming / وارد</th>
+                                        <th colspan="3" class="smvr-group-out smvr-center">Outgoing / منصرف</th>
+                                        <th colspan="3" class="smvr-group-bal smvr-center">Balance / رصيد</th>
+                                        <th rowspan="2">Notes<br/>ملاحظات</th>
+                                    </tr>
+                                    <tr>
+                                        <th class="smvr-group-in smvr-right">In Qty<br/>وارد كمية</th>
+                                        <th class="smvr-group-in smvr-right">In Cost<br/>وارد تكلفة</th>
+                                        <th class="smvr-group-in smvr-right">In Value<br/>وارد قيمة</th>
+                                        <th class="smvr-group-out smvr-right">Out Qty<br/>منصرف كمية</th>
+                                        <th class="smvr-group-out smvr-right">Out Cost<br/>منصرف تكلفة</th>
+                                        <th class="smvr-group-out smvr-right">Out Value<br/>منصرف قيمة</th>
+                                        <th class="smvr-group-bal smvr-right">Balance Qty<br/>رصيد كمية</th>
+                                        <th class="smvr-group-bal smvr-right">Balance Cost<br/>رصيد تكلفة</th>
+                                        <th class="smvr-group-bal smvr-right">Balance Value<br/>رصيد قيمة</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr t-if="not report_data.get('rows')">
+                                        <td class="smvr-empty" colspan="19">No movements found for the selected filters.<br/>لا توجد حركات مطابقة للفلاتر المحددة.</td>
+                                    </tr>
+                                    <tr t-foreach="report_data.get('rows', [])" t-as="row">
+                                        <td><span t-esc="row.get('movement_date', '')"/></td>
+                                        <td><span t-esc="row.get('valuation_date', '') or '-'"/></td>
+                                        <td><span t-esc="row.get('document_ref', '') or '-'"/></td>
+                                        <td><span t-esc="row.get('origin', '') or '-'"/></td>
+                                        <td><span t-esc="row.get('lot', '') or '-'"/></td>
+                                        <td><span t-esc="row.get('expiry_date', '') or '-'"/></td>
+                                        <td><span t-esc="row.get('source_location', '') or '-'"/></td>
+                                        <td><span t-esc="row.get('dest_location', '') or '-'"/></td>
+                                        <td><span t-esc="row.get('movement_type', '') or '-'"/></td>
+                                        <td class="smvr-right"><span t-esc="'%.2f' % row.get('incoming_qty') if row.get('incoming_qty', '') not in ('', False, None) else '-'"/></td>
+                                        <td class="smvr-right"><span t-esc="'%.2f' % row.get('incoming_unit_cost') if row.get('incoming_unit_cost', '') not in ('', False, None) else '-'"/></td>
+                                        <td class="smvr-right"><span t-esc="'%.2f' % row.get('incoming_value') if row.get('incoming_value', '') not in ('', False, None) else '-'"/></td>
+                                        <td class="smvr-right"><span t-esc="'%.2f' % row.get('outgoing_qty') if row.get('outgoing_qty', '') not in ('', False, None) else '-'"/></td>
+                                        <td class="smvr-right"><span t-esc="'%.2f' % row.get('outgoing_unit_cost') if row.get('outgoing_unit_cost', '') not in ('', False, None) else '-'"/></td>
+                                        <td class="smvr-right"><span t-esc="'%.2f' % row.get('outgoing_value') if row.get('outgoing_value', '') not in ('', False, None) else '-'"/></td>
+                                        <td class="smvr-right"><span t-esc="'%.2f' % row.get('running_qty') if row.get('running_qty', '') not in ('', False, None) else '-'"/></td>
+                                        <td class="smvr-right"><span t-esc="'%.2f' % row.get('running_avg_cost') if row.get('running_avg_cost', '') not in ('', False, None) else '-'"/></td>
+                                        <td class="smvr-right"><span t-esc="'%.2f' % row.get('running_value') if row.get('running_value', '') not in ('', False, None) else '-'"/></td>
+                                        <td class="smvr-note"><span t-esc="row.get('notes', '') or '-'"/></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <h3 class="smvr-section-title">Totals / الإجماليات</h3>
+                            <table class="smvr-table smvr-mb8">
+                                <tr>
+                                    <th class="smvr-group-in">Incoming Qty / وارد كمية</th>
+                                    <th class="smvr-group-in">Incoming Value / وارد قيمة</th>
+                                    <th class="smvr-group-out">Outgoing Qty / منصرف كمية</th>
+                                    <th class="smvr-group-out">Outgoing Value / منصرف قيمة</th>
+                                    <th class="smvr-group-bal">Ending Qty / رصيد كمية</th>
+                                    <th class="smvr-group-bal">Ending Value / رصيد قيمة</th>
+                                </tr>
+                                <tr>
+                                    <td class="smvr-right"><span t-esc="'%.2f' % report_data.get('totals', {}).get('incoming_qty') if report_data.get('totals', {}).get('incoming_qty', '') not in ('', False, None) else '-'"/></td>
+                                    <td class="smvr-right"><span t-esc="'%.2f' % report_data.get('totals', {}).get('incoming_value') if report_data.get('totals', {}).get('incoming_value', '') not in ('', False, None) else '-'"/></td>
+                                    <td class="smvr-right"><span t-esc="'%.2f' % report_data.get('totals', {}).get('outgoing_qty') if report_data.get('totals', {}).get('outgoing_qty', '') not in ('', False, None) else '-'"/></td>
+                                    <td class="smvr-right"><span t-esc="'%.2f' % report_data.get('totals', {}).get('outgoing_value') if report_data.get('totals', {}).get('outgoing_value', '') not in ('', False, None) else '-'"/></td>
+                                    <td class="smvr-right"><span t-esc="'%.2f' % report_data.get('totals', {}).get('ending_qty') if report_data.get('totals', {}).get('ending_qty', '') not in ('', False, None) else '-'"/></td>
+                                    <td class="smvr-right"><span t-esc="'%.2f' % report_data.get('totals', {}).get('ending_value') if report_data.get('totals', {}).get('ending_value', '') not in ('', False, None) else '-'"/></td>
+                                </tr>
+                            </table>
+
+                            <h3 class="smvr-section-title">Warnings / تنبيهات</h3>
+                            <table class="smvr-table smvr-mb8">
+                                <tbody>
+                                    <tr t-foreach="report_data.get('warnings', [])" t-as="warning">
+                                        <td><span t-esc="warning"/></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <h3 class="smvr-section-title">Flag Legend / شرح العلامات</h3>
+                            <table class="smvr-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 23%;">Flag</th>
+                                        <th style="width: 38%;">English</th>
+                                        <th style="width: 39%;">العربية</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>ZERO_VALUE_SVL</td>
+                                        <td>Valuation layer exists but value is zero.</td>
+                                        <td>توجد طبقة تقييم ولكن قيمتها صفر.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>NEGATIVE_RUNNING_QTY</td>
+                                        <td>Running quantity is negative within selected scope.</td>
+                                        <td>الرصيد المتحرك سالب داخل النطاق المختار.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>VAL_LINK_MISSING</td>
+                                        <td>No valuation layer was safely linked to this movement.</td>
+                                        <td>لا توجد طبقة تقييم مرتبطة بالحركة بشكل آمن.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>MULTI_SVL_AMBIGUOUS</td>
+                                        <td>Multiple valuation layers exist and cannot be safely allocated to this line.</td>
+                                        <td>توجد أكثر من طبقة تقييم ولا يمكن توزيعها بأمان على هذا السطر.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>BACKDATED_VALUATION_DATE</td>
+                                        <td>Movement date differs from valuation creation date.</td>
+                                        <td>تاريخ الحركة مختلف عن تاريخ إنشاء التقييم.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>
